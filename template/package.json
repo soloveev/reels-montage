@@ -1,0 +1,16 @@
+{
+  "name": "reels-montage",
+  "private": true,
+  "scripts": {
+    "studio": "remotion studio",
+    "render": "remotion render"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.529",
+    "@remotion/google-fonts": "^4.0.529",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "remotion": "^4.0.529",
+    "typescript": "^7.0.2"
+  }
+}

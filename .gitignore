@@ -1,0 +1,8 @@
+node_modules/
+out/
+.DS_Store
+template/стол/media/
+template/стол/data.json
+template/стол/selection.json
+template/public/
+__pycache__/

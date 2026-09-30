@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Монтажный стол</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+	--bg: #141312;
+	--panel: #1c1b19;
+	--panel-2: #24221f;
+	--line: #33302c;
+	--line-2: #45413b;
+	--text: #f3f0eb;
+	--muted: #a8a299;
+	--faint: #8d877e;
+	--accent: #ffd84a;
+	--accent-ink: #1b1600;
+	--v0: #8f897f;
+	--v1: #f28f5c;
+	--v2: #eea39a;
+	--v3: #8aa0ee;
+	--radius: 12px;
+	--ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); color-scheme: dark; }
+body {
+	margin: 0; background: var(--bg); color: var(--text);
+	font: 15px/1.45 "Golos Text", system-ui, sans-serif;
+	-webkit-font-smoothing: antialiased;
+}
+::selection { background: var(--accent); color: var(--accent-ink); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+* { scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
+button { font: inherit; color: inherit; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* ---------- шапка ---------- */
+.top {
+	position: sticky; top: 0; z-index: 20; height: 60px;
+	display: flex; align-items: center; gap: 20px; padding: 0 28px;
+	background: rgba(20, 19, 18, 0.92); backdrop-filter: blur(12px);
+	border-bottom: 1px solid var(--line);
+}
+.top h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+.top .meta { color: var(--muted); font-size: 14px; }
+.top .spacer { flex: 1; }
+.status { color: var(--muted); font-size: 13px; display: flex; align-items: center; gap: 8px; }
+.status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); transition: background 0.2s; }
+.status[data-state="saved"] .dot { background: #5ccf8e; }
+.status[data-state="saving"] .dot { background: var(--accent); }
+.status[data-state="error"] .dot { background: #ff6b6b; }
+.btn {
+	height: 36px; padding: 0 16px; border-radius: 9px; border: 1px solid var(--line-2);
+	background: var(--panel-2); cursor: pointer; font-size: 14px; font-weight: 600;
+	display: inline-flex; align-items: center; gap: 8px; transition: background 0.15s, border-color 0.15s;
+}
+.btn:hover { background: #2e2b27; border-color: #57524a; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.primary:hover { background: #ffe27a; }
+.btn svg { width: 16px; height: 16px; }
+
+/* ---------- раскладка ---------- */
+.layout { display: grid; grid-template-columns: 400px minmax(0, 1fr); gap: 0; }
+.side {
+	position: sticky; top: 60px; height: calc(100vh - 60px); overflow-y: auto;
+	padding: 24px 24px 32px 28px; border-right: 1px solid var(--line);
+}
+.main { padding: 8px 28px 80px; min-width: 0; }
+
+/* ---------- проигрыватель сборки ---------- */
+.side h2 { margin: 0 0 12px; font-size: 15px; font-weight: 700; }
+.player {
+	position: relative; width: 100%; aspect-ratio: 9 / 16; border-radius: var(--radius); overflow: hidden;
+	background: #000; box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+}
+.player video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; }
+.player video.on { opacity: 1; }
+.player .endcard {
+	position: absolute; inset: 0; display: none; align-items: center; justify-content: center; text-align: center;
+	background: #fff; color: #111; font-weight: 700; font-size: 18px; padding: 24px;
+}
+.player.ended .endcard { display: flex; }
+.player .bigplay {
+	position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+	background: transparent; border: 0; cursor: pointer;
+}
+.player .bigplay span {
+	width: 72px; height: 72px; border-radius: 50%; background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(6px);
+	display: flex; align-items: center; justify-content: center; transition: transform 0.2s var(--ease), opacity 0.2s;
+}
+.player .bigplay svg { width: 30px; height: 30px; margin-left: 4px; }
+.player.playing .bigplay span { opacity: 0; transform: scale(0.8); }
+.player .badge {
+	position: absolute; left: 12px; top: 12px; padding: 5px 10px; border-radius: 999px;
+	background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(6px); font-size: 13px; font-weight: 600;
+	display: flex; align-items: center; gap: 7px;
+}
+.swatch { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
+
+.controls { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+.iconbtn {
+	width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--accent); color: var(--accent-ink);
+	display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
+}
+.iconbtn:hover { background: #ffe27a; }
+.iconbtn svg { width: 18px; height: 18px; }
+.time { font-size: 14px; color: var(--muted); }
+.time b { color: var(--text); font-weight: 600; }
+
+.timeline { position: relative; display: flex; gap: 2px; height: 34px; margin-top: 14px; cursor: pointer; }
+.timeline .seg {
+	position: relative; height: 100%; border-radius: 5px; border: 0; padding: 0; cursor: pointer;
+	background: var(--panel-2); display: flex; align-items: flex-end; justify-content: center;
+	font-size: 11px; font-weight: 700; color: rgba(0, 0, 0, 0.72); padding-bottom: 3px; transition: filter 0.15s;
+}
+.timeline .seg:hover { filter: brightness(1.15); }
+.timeline .seg.empty { color: var(--muted); background: transparent; box-shadow: inset 0 0 0 1px var(--line-2); }
+.timeline .seg.empty.cur { box-shadow: inset 0 0 0 2px var(--text); }
+.timeline .seg.cur { box-shadow: inset 0 0 0 2px var(--text); }
+.timeline .head { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--text); border-radius: 1px; pointer-events: none; }
+
+.picks { margin: 22px 0 0; padding: 0; list-style: none; display: grid; gap: 2px; }
+.picks li {
+	display: grid; grid-template-columns: 26px 1fr auto; align-items: center; gap: 10px;
+	padding: 7px 10px; border-radius: 8px; font-size: 14px; cursor: pointer;
+}
+.picks li:hover { background: var(--panel); }
+.picks li.cur { background: var(--panel-2); }
+.picks .n { color: var(--faint); font-weight: 700; }
+.picks .what { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+.picks .v { display: flex; align-items: center; gap: 7px; font-weight: 600; }
+.picks .v.none { color: var(--faint); font-weight: 500; }
+.hint { margin-top: 18px; color: var(--faint); font-size: 13px; line-height: 1.5; }
+.hint kbd {
+	font: 600 12px/1 "Golos Text", sans-serif; padding: 3px 6px; border-radius: 5px;
+	border: 1px solid var(--line-2); background: var(--panel-2); color: var(--muted);
+}
+
+/* ---------- строки сцен ---------- */
+.row { padding: 28px 0 32px; border-bottom: 1px solid var(--line); scroll-margin-top: 70px; }
+.row:last-child { border-bottom: 0; }
+.row-head { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 18px; align-items: start; }
+.row-n { font-size: 40px; line-height: 1; font-weight: 800; letter-spacing: -0.03em; color: var(--faint); transition: color 0.2s; }
+.row.chosen .row-n { color: var(--text); }
+.row-time { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--muted); margin-bottom: 6px; }
+.tag {
+	font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 6px;
+	background: rgba(255, 216, 74, 0.14); color: var(--accent);
+}
+.row-text { font-size: 19px; line-height: 1.4; font-weight: 500; max-width: 70ch; text-wrap: pretty; }
+.row-go { white-space: nowrap; }
+
+.variants { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 20px; }
+.card {
+	position: relative; border-radius: var(--radius); background: var(--panel); border: 1px solid var(--line);
+	display: flex; flex-direction: column; overflow: hidden; transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s var(--ease);
+}
+.card:hover { border-color: var(--line-2); }
+.card.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 14px 34px rgba(0, 0, 0, 0.35); }
+.media { position: relative; aspect-ratio: 1080 / 1108; background: #000; cursor: pointer; overflow: hidden; }
+.row.full .media { aspect-ratio: 9 / 16; }
+.media img, .media video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 100%; display: block; }
+.row.full .media img, .row.full .media video { object-position: 50% 50%; }
+.media video { opacity: 0; transition: opacity 0.15s; }
+.media.playing video { opacity: 1; }
+.media .play {
+	position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%;
+	background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center;
+	transition: transform 0.2s var(--ease), opacity 0.2s; pointer-events: none;
+}
+.media .play svg { width: 22px; height: 22px; margin-left: 3px; }
+.media:hover .play { transform: scale(1.08); }
+.media.playing .play { opacity: 0; }
+.media .bar { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--accent); width: 0; }
+.media .full-note {
+	position: absolute; right: 10px; top: 10px; font-size: 11px; font-weight: 700; padding: 3px 7px; border-radius: 6px;
+	background: rgba(0, 0, 0, 0.6);
+}
+.strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; background: #000; }
+.strip img { width: 100%; aspect-ratio: 1080 / 1108; object-fit: cover; display: block; opacity: 0.9; }
+.row.full .strip { display: none; }
+.card-body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.vname { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; }
+.vname .k { margin-left: auto; color: var(--faint); font-weight: 600; }
+.desc { font-size: 14px; line-height: 1.4; color: var(--muted); flex: 1; }
+.choose {
+	height: 36px; border-radius: 9px; border: 1px solid var(--line-2); background: var(--panel-2);
+	font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px;
+	transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.choose:hover { background: #2e2b27; }
+.choose svg { width: 16px; height: 16px; }
+.card.selected .choose { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+.note {
+	margin-top: 14px; width: 100%; max-width: 70ch; min-height: 38px; resize: vertical; padding: 9px 12px;
+	border-radius: 9px; border: 1px solid var(--line); background: transparent; color: var(--text);
+	font: 14px/1.4 "Golos Text", sans-serif;
+}
+.note::placeholder { color: var(--faint); }
+.note:focus { outline: none; border-color: var(--accent); }
+
+.loading { padding: 80px 0; color: var(--muted); }
+.error { padding: 80px 0; color: #ff8f8f; }
+
+@media (max-width: 1180px) {
+	.layout { grid-template-columns: 1fr; }
+	.side { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 260px 1fr; gap: 24px; }
+	.side h2 { grid-column: 1 / -1; margin: 0; }
+	.variants { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+	.top { padding: 0 16px; gap: 12px; } .top .meta, .copy-label { display: none; }
+	.top h1 { font-size: 16px; white-space: nowrap; }
+	.status { font-size: 12px; white-space: nowrap; min-width: 0; overflow: hidden; }
+	.status span:last-child { overflow: hidden; text-overflow: ellipsis; }
+	#copy { width: 36px; padding: 0; justify-content: center; flex-shrink: 0; }
+	.side { grid-template-columns: 1fr; padding: 16px; }
+	.player { max-width: 250px; margin: 0 auto; }
+	.controls { justify-content: center; }
+	.main { padding: 0 16px 60px; }
+	.row-head { grid-template-columns: 44px 1fr; } .row-go { grid-column: 2; justify-self: start; }
+	.row-n { font-size: 30px; }
+	.variants { gap: 10px; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+	<h1>Монтажный стол</h1>
+	<div class="meta" id="meta"></div>
+	<div class="spacer"></div>
+	<div class="status" id="status" data-state="idle"><span class="dot"></span><span id="status-text">Загружаю…</span></div>
+	<button class="btn" id="copy" type="button">
+		<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>
+		<span class="copy-label">Скопировать выбор</span>
+	</button>
+	<button class="btn" id="md" type="button">
+		<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>
+		<span class="copy-label">Скачать MD</span>
+	</button>
+</header>
+
+<div class="layout">
+	<aside class="side">
+		<h2>Сборка из выбранного</h2>
+		<div>
+			<div class="player" id="player">
+				<div class="endcard">Дальше визитка «Ирис», 3 с</div>
+				<div class="badge" id="badge"></div>
+				<button class="bigplay" id="bigplay" type="button" aria-label="Проиграть сборку"><span><svg viewBox="0 0 24 24" fill="#fff"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5Z"/></svg></span></button>
+				<audio id="voice" preload="auto" src="media/voice.m4a"></audio>
+			</div>
+			<div class="controls">
+				<button class="iconbtn" id="toggle" type="button" aria-label="Проиграть"></button>
+				<div class="time num" id="time"><b>0:00</b> / 1:14</div>
+			</div>
+			<div class="timeline" id="timeline" aria-label="Таймлайн сборки"></div>
+		</div>
+		<div>
+			<ul class="picks" id="picks"></ul>
+			<p class="hint">Клик по кадру проигрывает кусочек со звуком. Где не выбрано, в сборке идёт «только сайт». Выбор сохраняется сам. Клавиши: <kbd>Пробел</kbd> — сборка, <kbd>0</kbd>–<kbd>3</kbd> — выбрать вариант в сцене, над которой мышь.</p>
+		</div>
+	</aside>
+	<main class="main" id="main"><div class="loading">Загружаю сцены…</div></main>
+</div>
+
+<script>
+const ICON = {
+	play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5Z"/></svg>',
+	pause: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4.5" height="16" rx="1.2"/><rect x="13.5" y="4" width="4.5" height="16" rx="1.2"/></svg>',
+	check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+	playWhite: '<svg viewBox="0 0 24 24" fill="#fff"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5Z"/></svg>',
+};
+const COLORS = ['var(--v0)', 'var(--v1)', 'var(--v2)', 'var(--v3)'];
+const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+const $ = (s, el = document) => el.querySelector(s);
+
+let data, choices = [], notes = [], hoverRow = null;
+
+// ---------- сохранение ----------
+const status = $('#status'), statusText = $('#status-text');
+let saveTimer;
+function setStatus(state, text) { status.dataset.state = state; statusText.textContent = text; }
+function save() {
+	clearTimeout(saveTimer);
+	setStatus('saving', 'Сохраняю…');
+	saveTimer = setTimeout(async () => {
+		try {
+			const r = await fetch('/api/selection', {method: 'POST', headers: {'Content-Type': 'application/json'},
+				body: JSON.stringify({choices, notes, summary: summaryText()})});
+			const j = await r.json();
+			setStatus('saved', `Сохранено в ${j.savedAt.slice(11, 16)}`);
+		} catch (e) {
+			setStatus('error', 'Не сохранилось: сервер не отвечает');
+		}
+	}, 350);
+}
+function summaryText() {
+	return data.rows.map((r, i) => `${r.n} — ${choices[i] == null ? 'не выбрано' : `${choices[i]} ${data.versions[choices[i]].name}`}${notes[i] ? ` (${notes[i]})` : ''}`).join('\n');
+}
+
+// ---------- сцены ----------
+function renderRows() {
+	const main = $('#main');
+	main.innerHTML = '';
+	data.rows.forEach((row, i) => {
+		const el = document.createElement('section');
+		el.className = 'row' + (row.full ? ' full' : '');
+		el.id = `row-${row.n}`;
+		el.dataset.i = i;
+		el.innerHTML = `
+			<div class="row-head">
+				<div class="row-n num">${String(row.n).padStart(2, '0')}</div>
+				<div>
+					<div class="row-time num">${fmt(row.start)}–${fmt(row.end)} · ${(row.end - row.start).toFixed(1).replace('.', ',')} с${row.full ? '<span class="tag">весь экран</span>' : ''}</div>
+					<div class="row-text">${row.text}</div>
+				</div>
+				<button class="btn row-go" type="button">${ICON.play.replace('<svg', '<svg width="14" height="14"')} В сборке с этого места</button>
+			</div>
+			<div class="variants"></div>
+			<textarea class="note" rows="1" placeholder="Заметка к сцене: что поправить, откуда что взять"></textarea>`;
+		const box = $('.variants', el);
+		row.variants.forEach(({v, desc}) => {
+			const ver = data.versions[v];
+			const base = `media/clips/r${String(row.n).padStart(2, '0')}-v${v}`;
+			const card = document.createElement('article');
+			card.className = 'card';
+			card.dataset.v = v;
+			card.innerHTML = `
+				<div class="media" role="button" tabindex="0" aria-label="Проиграть: сцена ${row.n}, ${ver.name}">
+					<img src="${base}.jpg" alt="" loading="lazy">
+					<video preload="none" playsinline></video>
+					<div class="play">${ICON.playWhite}</div>
+					<div class="bar"></div>
+				</div>
+				${row.full ? '' : `<div class="strip">${[0, 1, 2].map((j) => `<img src="${base}-s${j}.jpg" alt="" loading="lazy">`).join('')}</div>`}
+				<div class="card-body">
+					<div class="vname"><span class="swatch" style="background:${COLORS[v]}"></span>${ver.name}<span class="k num">${v}</span></div>
+					<div class="desc">${desc}</div>
+					<button class="choose" type="button" aria-pressed="false"></button>
+				</div>`;
+			$('.media', card).addEventListener('click', () => toggleClip(card, `${base}.mp4`));
+			$('.media', card).addEventListener('keydown', (e) => { if (e.key === 'Enter') toggleClip(card, `${base}.mp4`); });
+			$('.choose', card).addEventListener('click', () => choose(i, v));
+			box.appendChild(card);
+		});
+		const note = $('.note', el);
+		note.value = notes[i] || '';
+		note.addEventListener('input', () => { notes[i] = note.value; save(); });
+		$('.row-go', el).addEventListener('click', () => { seek(row.start + 0.01); play(); });
+		el.addEventListener('mouseenter', () => { hoverRow = i; });
+		main.appendChild(el);
+	});
+	refreshChoices();
+}
+
+function choose(i, v) {
+	choices[i] = choices[i] === v ? null : v;
+	refreshChoices();
+	save();
+}
+
+function refreshChoices() {
+	document.querySelectorAll('.row').forEach((el, i) => {
+		el.classList.toggle('chosen', choices[i] != null);
+		el.querySelectorAll('.card').forEach((card) => {
+			const on = Number(card.dataset.v) === choices[i];
+			card.classList.toggle('selected', on);
+			const b = $('.choose', card);
+			b.setAttribute('aria-pressed', on);
+			b.innerHTML = on ? `${ICON.check} Выбрано` : 'Выбрать';
+		});
+	});
+	renderTimeline();
+	renderPicks();
+	updatePlayer(true);
+}
+
+// ---------- проигрывание кусочка ----------
+let activeClip = null;
+function stopClip() {
+	if (!activeClip) return;
+	const {card, video} = activeClip;
+	video.pause();
+	$('.media', card).classList.remove('playing');
+	$('.bar', card).style.width = '0';
+	activeClip = null;
+}
+function toggleClip(card, src) {
+	if (activeClip && activeClip.card === card) { stopClip(); return; }
+	stopClip();
+	pause();
+	const video = $('video', card);
+	if (!video.src) video.src = src;
+	video.currentTime = 0;
+	video.play();
+	$('.media', card).classList.add('playing');
+	activeClip = {card, video};
+	video.ontimeupdate = () => { $('.bar', card).style.width = `${(video.currentTime / video.duration) * 100}%`; };
+	video.onended = () => stopClip();
+}
+
+// ---------- сборка ----------
+const player = $('#player'), voice = $('#voice');
+let vids = [];
+function buildPlayer() {
+	vids = data.versions.map((ver) => {
+		const v = document.createElement('video');
+		v.src = `media/v${ver.id}.mp4`;
+		v.muted = true; v.playsInline = true; v.preload = 'auto';
+		player.insertBefore(v, player.firstChild);
+		return v;
+	});
+}
+const rowAt = (t) => Math.max(0, data.rows.findIndex((r) => t >= r.start && t < r.end) === -1 ? data.rows.length - 1 : data.rows.findIndex((r) => t >= r.start && t < r.end));
+const verAt = (i) => (choices[i] == null ? 0 : choices[i]);
+let lastRow = -1;
+function updatePlayer(force) {
+	if (!vids.length) return;
+	const t = voice.currentTime;
+	const i = rowAt(t);
+	const v = verAt(i);
+	vids.forEach((el, k) => {
+		el.classList.toggle('on', k === v);
+		if (Math.abs(el.currentTime - t) > (voice.paused ? 0.02 : 0.2)) el.currentTime = t;
+	});
+	if (force || i !== lastRow) {
+		lastRow = i;
+		const ver = data.versions[v];
+		$('#badge').innerHTML = `<span class="swatch" style="background:${COLORS[v]}"></span>Сцена ${data.rows[i].n} · ${choices[i] == null ? 'не выбрано' : ver.name}`;
+		document.querySelectorAll('.timeline .seg').forEach((s, k) => s.classList.toggle('cur', k === i));
+		document.querySelectorAll('.picks li').forEach((s, k) => s.classList.toggle('cur', k === i));
+	}
+	$('#time').innerHTML = `<b>${fmt(t)}</b> / ${fmt(data.duration)}`;
+	const head = $('.timeline .head');
+	if (head) head.style.left = `${(t / data.duration) * 100}%`;
+	player.classList.toggle('ended', voice.ended);
+}
+function loop() {
+	updatePlayer(false);
+	if (!voice.paused) requestAnimationFrame(loop);
+}
+function play() {
+	stopClip();
+	if (voice.ended) voice.currentTime = 0;
+	voice.play();
+	vids.forEach((v) => v.play().catch(() => {}));
+	player.classList.add('playing');
+	$('#toggle').innerHTML = ICON.pause;
+	$('#toggle').setAttribute('aria-label', 'Пауза');
+	requestAnimationFrame(loop);
+}
+function pause() {
+	voice.pause();
+	vids.forEach((v) => v.pause());
+	player.classList.remove('playing');
+	$('#toggle').innerHTML = ICON.play;
+	$('#toggle').setAttribute('aria-label', 'Проиграть');
+	updatePlayer(true);
+}
+function seek(t) {
+	voice.currentTime = t;
+	vids.forEach((v) => { v.currentTime = t; });
+	updatePlayer(true);
+}
+voice.addEventListener('ended', () => { pause(); player.classList.add('ended'); });
+$('#toggle').addEventListener('click', () => (voice.paused ? play() : pause()));
+$('#bigplay').addEventListener('click', () => (voice.paused ? play() : pause()));
+
+function renderTimeline() {
+	const tl = $('#timeline');
+	tl.innerHTML = '';
+	data.rows.forEach((r, i) => {
+		const b = document.createElement('button');
+		b.type = 'button';
+		b.className = 'seg num' + (choices[i] == null ? ' empty' : '');
+		b.style.flex = String(r.end - r.start);
+		if (choices[i] != null) b.style.background = COLORS[choices[i]];
+		b.textContent = r.n;
+		b.title = `Сцена ${r.n}: ${choices[i] == null ? 'не выбрано' : data.versions[choices[i]].name}`;
+		b.addEventListener('click', () => { seek(r.start + 0.01); document.getElementById(`row-${r.n}`).scrollIntoView({behavior: 'smooth'}); });
+		tl.appendChild(b);
+	});
+	const head = document.createElement('div');
+	head.className = 'head';
+	tl.appendChild(head);
+}
+
+function renderPicks() {
+	const ul = $('#picks');
+	ul.innerHTML = '';
+	data.rows.forEach((r, i) => {
+		const li = document.createElement('li');
+		const c = choices[i];
+		li.innerHTML = `<span class="n num">${r.n}</span><span class="what">${r.text}</span>` +
+			(c == null ? '<span class="v none">—</span>' : `<span class="v"><span class="swatch" style="background:${COLORS[c]}"></span>${data.versions[c].short}</span>`);
+		li.addEventListener('click', () => document.getElementById(`row-${r.n}`).scrollIntoView({behavior: 'smooth'}));
+		ul.appendChild(li);
+	});
+}
+
+// ---------- клавиши и копирование ----------
+document.addEventListener('keydown', (e) => {
+	if (e.target.matches('textarea, input')) return;
+	if (e.code === 'Space') { e.preventDefault(); voice.paused ? play() : pause(); }
+	if (/^[0-3]$/.test(e.key) && hoverRow != null) choose(hoverRow, Number(e.key));
+});
+function markdown() {
+	const lines = [`# Монтажный стол — ${data.title}`, '', `Сохранено: ${new Date().toLocaleString('ru-RU')}`, '', '| # | Время | Текст | Вариант | Заметка |', '|---|---|---|---|---|'];
+	data.rows.forEach((r, i) => {
+		const c = choices[i];
+		const v = c == null ? 'не выбрано' : `${c} — ${data.versions[c].name}`;
+		const cell = (x) => String(x || '').replace(/\|/g, '\\|').replace(/\n/g, ' ');
+		lines.push(`| ${r.n} | ${fmt(r.start)}–${fmt(r.end)} | ${cell(r.text)} | ${v} | ${cell(notes[i])} |`);
+	});
+	return lines.join('\n') + '\n';
+}
+$('#md').addEventListener('click', () => {
+	const blob = new Blob([markdown()], {type: 'text/markdown;charset=utf-8'});
+	const a = document.createElement('a');
+	a.href = URL.createObjectURL(blob);
+	a.download = `монтажный стол — ${data.title}.md`;
+	a.click();
+	URL.revokeObjectURL(a.href);
+	setStatus('saved', 'MD скачан');
+});
+$('#copy').addEventListener('click', async () => {
+	await navigator.clipboard.writeText(summaryText());
+	setStatus('saved', 'Выбор скопирован');
+});
+
+// ---------- старт ----------
+(async () => {
+	try {
+		data = await (await fetch('data.json')).json();
+		const saved = await (await fetch('/api/selection')).json().catch(() => null);
+		choices = saved?.choices?.length === data.rows.length ? saved.choices : data.default.slice();
+		notes = saved?.notes || data.rows.map(() => '');
+		$('#meta').textContent = `${data.title} · версия A · ${fmt(data.duration)} + визитка`;
+		buildPlayer();
+		renderRows();
+		$('#toggle').innerHTML = ICON.play;
+		setStatus(saved ? 'saved' : 'idle', saved ? `Выбор загружен (${saved.savedAt.slice(11, 16)})` : 'Ничего не выбрано');
+		voice.addEventListener('loadedmetadata', () => updatePlayer(true));
+	} catch (e) {
+		$('#main').innerHTML = '<div class="error">Не удалось загрузить сцены. Запусти сервер: python3 server.py</div>';
+		setStatus('error', 'Нет данных');
+	}
+})();
+</script>
+</body>
+</html>
